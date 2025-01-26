@@ -2,19 +2,20 @@ package com.example.coffeetemperature;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.Button;
-import android.widget.Chronometer;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.coffeetemperature.views.confirmDialog;
+import com.example.coffeetemperature.views.ConfirmDialog;
 import com.example.coffeetemperature.views.temperatureLineChart;
 
 public class MainActivity extends AppCompatActivity {
 
     private temperatureLineChart tempLineChart;
     private Button startButton, recordButton, stopButton;
-    private Chronometer chronometer;
+    private Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,22 +39,24 @@ public class MainActivity extends AppCompatActivity {
         stopButton = findViewById(R.id.stopButton);
 
         startButton.setEnabled(true);
-        recordButton.setEnabled(false);
-        stopButton.setEnabled(false);
+        recordButton.setEnabled(true);
+        stopButton.setEnabled(true);
 
         // 設置按鈕點擊事件
         startButton.setOnClickListener(v -> handleStart());
         recordButton.setOnClickListener(v -> handleRecord());
-        stopButton.setOnClickListener(v -> handleStop());
+        stopButton.setOnClickListener(v -> handleStop()); // handleStop() 是當每次 被 click 瘩時候都會被呼叫
     }
     private void initTimer() {
-        chronometer = findViewById(R.id.timer);
+        timer = new Timer(findViewById(R.id.timer));
+        timer.start();
     }
 
     private void handleStart() {
         startButton.setEnabled(false);
+        startButton.setAlpha(0.5F);
         // 開始計時
-        chronometer.start();
+        timer.start();
     }
 
     private void handleRecord() {
@@ -61,26 +64,67 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleStop() {
-        // confirm stopButton can pressed
-        if (!stopButttonIsStopable()) return;
+        // confirm stopButton can pressed ?
 
-        chronometer.stop();
+        timer.stop();
 
-        // double check
-        confirmDialog CD = new confirmDialog(this, "stop", "are you sure to stop?");
-        if (CD.isConfirm()) {
-            startActivity(new Intent(this, saveFileActivity.class));
+        // double check (timestamp:2025.1.26 OK)
+        ConfirmDialog CD = new ConfirmDialog(this,
+                                getString(R.string.EN_startButtton_confirmDialog_title),
+                                getString(R.string.EN_startButtton_confirmDialog_message));
+        CD.show(result -> {
+            if (result) {
+                // User confirmed
+                startActivity(new Intent(this, saveFileActivity.class));
+            } else {
+                // User canceled
+                timer.start();
+            }
+        });
+
+    }
+
+    public class Timer {
+        private TextView timerTextView;
+        private Handler handler = new Handler();
+        private int secondsElapsed = 0;
+        public Timer(TextView timerTextView) {
+            this.timerTextView = timerTextView;
         }
-        else {
+        public void start() {
+            // 每秒更新一次畫面
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    // 計算經過的分鐘和秒數
+                    int minutes = secondsElapsed / 60;
+                    int seconds = secondsElapsed % 60;
+
+                    // 格式化時間並顯示
+                    String time = String.format("%02d:%02d", minutes, seconds);
+                    timerTextView.setText(time);
+
+                    // 累加秒數並延遲 1 秒再次執行
+                    secondsElapsed++;
+                    handler.postDelayed(this, 1000);
+                }
+            });
+        }
+        public void stop() {
+            handler.removeCallbacksAndMessages(null);
+            secondsElapsed = 0;
+            timerTextView.setText("00:00");
 //            startButton.setEnabled(true);
-//            recordButton.setEnabled(false);
-//            stopButton.setEnabled(false);
+//            startButton.setAlpha(1.0F);
+//            recordButton.setEnabled(true);
+//            stopButton.setEnabled(true);
+//            recordButton.setAlpha(1.0F);
+//            stopButton.setAlpha(1.0F);
+//            tempLineChart.clearData();
+//            tempLineChart.invalidate();
+//            timer.start();
         }
     }
-    private boolean stopButttonIsStopable() {
-        // check start button is already pressed
-        return startButton.isEnabled();
-    }
-
-
 }
+
+

@@ -5,7 +5,13 @@
     <string name="EN_startButton">start</string>
     <string name="EN_recordButton">record</string>
     <string name="EN_stopButton">stop</string>
+    <!-- MainActivity.java:stopButton -->
+    <string name="EN_startButtton_confirmDialog_title">stop</string>
+    <string name="EN_startButtton_confirmDialog_message">are you sure to stop?</string>
     <!-- saveFileActivity.java -->
     <string name="EN_loss_folderName_fileName_caution">folderName or fileName can\'t be empty</string>>
     <string name="EN_file_saved_successfully">file saved successfully</string>">
+    <!-- confirmDialog -->
+    <string name="EN_accept">accept</string>>
+    <string name="EN_deny">deny</string>
 </resources>
