@@ -1,0 +1,11 @@
+<resources>
+    <!-- AndroidMainifest.xml -->
+    <string name="EN_app_name">coffeeTemperature</string>
+    <!-- MainActivity.java -->
+    <string name="EN_startButton">start</string>
+    <string name="EN_recordButton">record</string>
+    <string name="EN_stopButton">stop</string>
+    <!-- saveFileActivity.java -->
+    <string name="EN_loss_folderName_fileName_caution">folderName or fileName can\'t be empty</string>>
+    <string name="EN_file_saved_successfully">file saved successfully</string>">
+</resources>

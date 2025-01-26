@@ -163,16 +163,29 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "b6b90fe5513a2d1c",
+  "active": "74ee7e509b80e455",
   "lastOpenFiles": [
-    "BluetoothServer/ci.json",
-    "BluetoothServer/BluetoothServer.ino",
-    "BluetoothServer",
-    "pptFCB1.tmp",
-    "ppt7AA.tmp",
-    "pptA9C6.tmp",
-    "pptA8D3.tmp",
-    "~$Coffee Roaster Project.pptx",
+    "coffeeTemperature/gradle/wrapper/gradle-wrapper.properties",
+    "coffeeTemperature/gradle/wrapper/gradle-wrapper.jar",
+    "coffeeTemperature/gradle/wrapper",
+    "coffeeTemperature/gradle/libs.versions.toml",
+    "coffeeTemperature/gradle",
+    "coffeeTemperature/app/src/test/java/com/example/coffeetemperature/ExampleUnitTest.java",
+    "coffeeTemperature/app/src/test/java/com/example/coffeetemperature",
+    "coffeeTemperature/app/src/test/java/com/example",
+    "coffeeTemperature/app/src/test/java/com",
+    "coffeeTemperature/app/src/test/java",
+    "coffeeTemperature/app/src/test",
+    "coffeeTemperature/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-mdpi/ic_launcher.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp",
+    "coffeeTemperature/app/src/main/res/mipmap-hdpi/ic_launcher.webp",
     "README.md"
   ]
 }

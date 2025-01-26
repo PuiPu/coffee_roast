@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="94dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="232dp"
+        android:text="save"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.693"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/descriptionBlank"
+        app:layout_constraintVertical_bias="0.56" />
+
+    <EditText
+        android:id="@+id/fileNameBlank"
+        android:layout_width="342dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="type coffee name"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.579"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/fileName" />
+
+    <TextView
+        android:id="@+id/fileName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="44dp"
+        android:text="file name"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.121"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:text="description"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.131"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/folderBlank" />
+
+    <TextView
+        android:id="@+id/folder"
+        android:layout_width="76dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="24dp"
+        android:text="folder"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/folderBlank"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.119"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/fileNameBlank"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <EditText
+        android:id="@+id/descriptionBlank"
+        android:layout_width="271dp"
+        android:layout_height="204dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="344dp"
+        android:ems="10"
+        android:gravity="start|top"
+        android:hint="type in coffee's feature ..."
+        android:inputType="textMultiLine"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.292"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/description" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/folder_fab"
+        android:layout_width="55dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="171dp"
+        android:layout_marginEnd="68dp"
+        android:contentDescription="Folder Button"
+        android:src="@drawable/open_folder"
+        app:backgroundTint="@color/white"
+        app:layout_anchorGravity="bottom|end"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/description"
+        app:layout_constraintTop_toBottomOf="@+id/folderBlank"
+        app:layout_constraintVertical_bias="0.032" />
+
+    <EditText
+        android:id="@+id/folderBlank"
+        android:layout_width="325dp"
+        android:layout_height="57dp"
+        android:layout_marginBottom="12dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="/coffeeRoaster/{time}"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.488"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.267" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
