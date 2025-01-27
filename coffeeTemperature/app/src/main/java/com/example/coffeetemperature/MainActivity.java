@@ -2,20 +2,23 @@ package com.example.coffeetemperature;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.coffeetemperature.utils.BLEClient;
 import com.example.coffeetemperature.views.ConfirmDialog;
-import com.example.coffeetemperature.views.temperatureLineChart;
+import com.example.coffeetemperature.views.TemperatureLineChart;
+import com.example.coffeetemperature.views.Timer;
 
 public class MainActivity extends AppCompatActivity {
 
-    private temperatureLineChart tempLineChart;
+    private TemperatureLineChart tempLineChart;
     private Button startButton, recordButton, stopButton;
     private Timer timer;
+    // test
+    BLEClient bleClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +31,30 @@ public class MainActivity extends AppCompatActivity {
         initButton();
         // 初始化 timer
         initTimer();
+
+        // BLE button
+        BLEClient bleClient = new BLEClient(this);
+        findViewById(R.id.BLE_button).setOnClickListener(v -> {
+            String MAC = "94:54:C5:B5:CB:B2";
+            bleClient.connectToDevice(MAC);
+        });
+
     }
+
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        try {
+//            if (inputStream != null) inputStream.close();
+//            if (bluetoothSocket != null) bluetoothSocket.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
     private void initLineChart() {
-        tempLineChart = new temperatureLineChart(
-                findViewById(R.id.lineChart));
+        tempLineChart = new TemperatureLineChart(this, findViewById(R.id.lineChart));
     }
+
     private void initButton() {
         startButton = findViewById(R.id.startButton);
         recordButton = findViewById(R.id.recordButton);
@@ -47,9 +69,9 @@ public class MainActivity extends AppCompatActivity {
         recordButton.setOnClickListener(v -> handleRecord());
         stopButton.setOnClickListener(v -> handleStop()); // handleStop() 是當每次 被 click 瘩時候都會被呼叫
     }
+
     private void initTimer() {
         timer = new Timer(findViewById(R.id.timer));
-        timer.start();
     }
 
     private void handleStart() {
@@ -65,13 +87,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleStop() {
         // confirm stopButton can pressed ?
+        if (startButton.isEnabled()) { // CAUTION: "True if this view is enabled" := "pressed button is TRUE"
+            Toast.makeText(this, R.string.EN_press_start_button_first_caution, Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        // stop timing
         timer.stop();
 
         // double check (timestamp:2025.1.26 OK)
         ConfirmDialog CD = new ConfirmDialog(this,
-                                getString(R.string.EN_startButtton_confirmDialog_title),
-                                getString(R.string.EN_startButtton_confirmDialog_message));
+                getString(R.string.EN_startButtton_confirmDialog_title),
+                getString(R.string.EN_startButtton_confirmDialog_message));
         CD.show(result -> {
             if (result) {
                 // User confirmed
@@ -81,50 +108,5 @@ public class MainActivity extends AppCompatActivity {
                 timer.start();
             }
         });
-
-    }
-
-    public class Timer {
-        private TextView timerTextView;
-        private Handler handler = new Handler();
-        private int secondsElapsed = 0;
-        public Timer(TextView timerTextView) {
-            this.timerTextView = timerTextView;
-        }
-        public void start() {
-            // 每秒更新一次畫面
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    // 計算經過的分鐘和秒數
-                    int minutes = secondsElapsed / 60;
-                    int seconds = secondsElapsed % 60;
-
-                    // 格式化時間並顯示
-                    String time = String.format("%02d:%02d", minutes, seconds);
-                    timerTextView.setText(time);
-
-                    // 累加秒數並延遲 1 秒再次執行
-                    secondsElapsed++;
-                    handler.postDelayed(this, 1000);
-                }
-            });
-        }
-        public void stop() {
-            handler.removeCallbacksAndMessages(null);
-            secondsElapsed = 0;
-            timerTextView.setText("00:00");
-//            startButton.setEnabled(true);
-//            startButton.setAlpha(1.0F);
-//            recordButton.setEnabled(true);
-//            stopButton.setEnabled(true);
-//            recordButton.setAlpha(1.0F);
-//            stopButton.setAlpha(1.0F);
-//            tempLineChart.clearData();
-//            tempLineChart.invalidate();
-//            timer.start();
-        }
     }
 }
-
-

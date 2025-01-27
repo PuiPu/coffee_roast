@@ -8,9 +8,17 @@
     <!-- MainActivity.java:stopButton -->
     <string name="EN_startButtton_confirmDialog_title">stop</string>
     <string name="EN_startButtton_confirmDialog_message">are you sure to stop?</string>
+    <string name="EN_press_start_button_first_caution">please press start button first</string>>"
     <!-- saveFileActivity.java -->
     <string name="EN_loss_folderName_fileName_caution">folderName or fileName can\'t be empty</string>>
     <string name="EN_file_saved_successfully">file saved successfully</string>">
+    <!-- activity_savefile.xml -->
+    <string name="EN_fileName">file name</string>>
+    <string name="EN_fileName_hint">type coffee name</string>
+    <string name="EN_folderName">folder name</string>>
+    <string name="EN_folderName_default_path">/coffeeRoaster/{time}</string>
+    <string name="EN_description">description</string>>
+    <string name="EN_description_hint">type in coffee\'s feature ...</string>
     <!-- confirmDialog -->
     <string name="EN_accept">accept</string>>
     <string name="EN_deny">deny</string>

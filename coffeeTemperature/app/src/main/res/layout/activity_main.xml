@@ -8,9 +8,10 @@
     <!-- 折線圖 -->
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/lineChart"
-        android:layout_width="match_parent"
+        android:layout_width="310dp"
         android:layout_height="300dp"
-        android:layout_marginBottom="16dp" />
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
 
     <!-- 三個按鈕 -->
     <LinearLayout
@@ -24,7 +25,7 @@
             android:alpha="1.0"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="3dp"
             android:backgroundTint="@android:color/holo_green_dark"
             android:text="@string/EN_startButton"
             android:textColor="@android:color/white" />
@@ -33,7 +34,7 @@
             android:id="@+id/recordButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="3dp"
             android:backgroundTint="@android:color/holo_blue_dark"
             android:text="@string/EN_recordButton"
             android:textColor="@android:color/white" />
@@ -42,6 +43,7 @@
             android:id="@+id/stopButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="3dp"
             android:backgroundTint="@android:color/holo_red_dark"
             android:text="@string/EN_stopButton"
             android:textColor="@android:color/white" />
@@ -61,4 +63,10 @@
             android:text="00:00"
             android:layout_gravity="center" />
     </LinearLayout>
+
+    <Button
+        android:id="@+id/BLE_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BLEbutton" />
 </LinearLayout>
