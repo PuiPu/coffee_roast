@@ -35,6 +35,8 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -59,12 +61,19 @@ public class BLEClient {
     private Context context;
     private Queue<Entry> temperatureEntriesBuffer;
     private int timeIndex;
+    private Handler bleHandler;
+    private HandlerThread handlerThread;
 
     public BLEClient(Context context) {
         this.context = context;
         initBluetooth();
         temperatureEntriesBuffer = new LinkedList<>();
         timeIndex = 0;
+
+        // 初始化 BLE 背景執行緒
+        handlerThread = new HandlerThread("BLEThread");
+        handlerThread.start();
+        bleHandler = new Handler(handlerThread.getLooper());
     }
 
     @SuppressLint("MissingPermission")
@@ -88,9 +97,7 @@ public class BLEClient {
 
     @SuppressLint("MissingPermission")
     public void startScanning() {
-        if (!checkBluetoothPermissions()) {
-            return;
-        }
+        if (!checkBluetoothPermissions()) return;
 
         if (bluetoothLeScanner == null) {
             Log.e(TAG, "BluetoothLeScanner is null");
@@ -107,8 +114,10 @@ public class BLEClient {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             BluetoothDevice device = result.getDevice();
-            if (device.getName() != null && device.getName().equals(DEVICE_NAME)) {
-                Log.d(TAG, "Found target device: " + device.getName());
+            String deviceName = device.getName();
+
+            Log.d(TAG, "Device found during scan: " + (deviceName != null ? deviceName : "Unnamed"));
+            if (deviceName != null && deviceName.equals(DEVICE_NAME)) {
                 bluetoothLeScanner.stopScan(this);
                 connectToDevice(device);
             }
@@ -122,12 +131,16 @@ public class BLEClient {
 
     @SuppressLint("MissingPermission")
     private void connectToDevice(BluetoothDevice device) {
-        if (!checkBluetoothPermissions()) {
-            return;
-        }
+        if (!checkBluetoothPermissions()) return;
 
-        bluetoothGatt = device.connectGatt(context, false, gattCallback);
         Log.d(TAG, "Connecting to GATT server...");
+        bleHandler.post(() -> {
+            if (bluetoothGatt != null) {
+                bluetoothGatt.close();
+                bluetoothGatt = null;
+            }
+            bluetoothGatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
+        });
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
@@ -136,21 +149,11 @@ public class BLEClient {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.d(TAG, "Connected to GATT server.");
-                gatt.discoverServices();
+                bleHandler.post(() -> gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.d(TAG, "Disconnected from GATT server.");
-                /*
-                 * 跑到這裡來是不是代表 gatt server 失敗，如果是這樣，導致 gatt server 連線失敗的原因是什麼
-                 * 1. 藍牙設備不在附近 (超出距離)
-                 * 2. 藍牙設備被關閉
-                 * 3. 藍牙設備故障
-                 * 4. GATT 連線不穩定
-                 * 5. 程式邏輯錯誤 (例如：gatt 被提早關閉)
-                 * 6. Server 端斷開連線
-                 */
-
+                Log.e(TAG, "Disconnected from GATT server, status: " + status);
+                bleHandler.postDelayed(() -> connectToDevice(gatt.getDevice()), 3000);
                 gatt.close();
-                bluetoothGatt = null;
             }
         }
 
@@ -170,35 +173,61 @@ public class BLEClient {
                     return;
                 }
 
-                if (!checkBluetoothPermissions()) {
-                    return;
-                }
-
                 Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
-                gatt.readCharacteristic(characteristic);
                 gatt.setCharacteristicNotification(characteristic, true);
             } else {
                 Log.e(TAG, "Service discovery failed with status: " + status);
             }
         }
+//        @SuppressLint("MissingPermission")
+//        @Override
+//        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                BluetoothGattService service = gatt.getService(SERVICE_UUID);
+//                if (service == null) {
+//                    Log.e(TAG, "Service UUID not found!");
+//                    return;
+//                }
+//
+//                BluetoothGattCharacteristic characteristic = service.getCharacteristic(CHARACTERISTIC_UUID);
+//                if (characteristic == null) {
+//                    Log.e(TAG, "Characteristic UUID not found!");
+//                    return;
+//                }
+//
+//                Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
+//
+//                // 設定通知
+//                gatt.setCharacteristicNotification(characteristic, true);
+//
+//                // 🔥 **寫入 CCCD 來啟用通知**
+//                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
+//                if (descriptor != null) {
+//                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+//                    gatt.writeDescriptor(descriptor);
+//                } else {
+//                    Log.e(TAG, "CCCD Descriptor not found!");
+//                }
+//            } else {
+//                Log.e(TAG, "Service discovery failed with status: " + status);
+//            }
+//        }
 
+        @SuppressLint("MissingPermission")
         @Override
-        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                byte[] data = characteristic.getValue();
-                if (data != null) {
-                    String temperatureStr = new String(data);
-                    try {
-                        float temperature = Float.parseFloat(temperatureStr);
-                        temperatureEntriesBuffer.add(new Entry(timeIndex++, temperature));
-                        Log.d(TAG, "Temperature read: " + temperature);
-                    } catch (NumberFormatException e) {
-                        Log.e(TAG, "Failed to parse temperature: " + temperatureStr, e);
-                    }
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            byte[] data = characteristic.getValue();
+            if (data != null) {
+                String temperatureStr = new String(data);
+                try {
+                    float temperature = Float.parseFloat(temperatureStr);
+                    temperatureEntriesBuffer.add(new Entry(timeIndex++, temperature));
+                    Log.d(TAG, "Temperature updated: " + temperature);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Failed to parse temperature: " + temperatureStr, e);
                 }
-            } else {
-                Log.e(TAG, "Failed to read characteristic, status: " + status);
             }
+            Toast.makeText(context, "client 抓不到直", Toast.LENGTH_SHORT).show();
         }
     };
 
