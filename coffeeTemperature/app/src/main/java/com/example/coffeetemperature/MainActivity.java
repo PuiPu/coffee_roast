@@ -33,12 +33,8 @@ public class MainActivity extends AppCompatActivity {
         initTimer();
 
         // BLE button
-        BLEClient bleClient = new BLEClient(this);
-        findViewById(R.id.BLE_button).setOnClickListener(v -> {
-            String MAC = "94:54:C5:B5:CB:B2";
-            bleClient.connectToDevice(MAC);
-        });
-
+        bleClient = new BLEClient(this);
+        findViewById(R.id.BLE_button).setOnClickListener(v -> bleClient.startScanning());
     }
 
 //    @Override
