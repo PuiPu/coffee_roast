@@ -119,13 +119,13 @@ public class TemperatureLineChart {
         this.description = D;
     }
 
-    public void updateTemperatureEntries() {
-        Entry entry = new Entry(timeIndex++, bleClient.getTemperature(timeIndex)); // 2025.1.27 will cause race condition ?
-        temperatureEntries.add(entry);
-        // 通知數據集已更新
-        lineData.notifyDataChanged();
-        lineChart.notifyDataSetChanged();
-        lineChart.invalidate(); // 刷新圖表
-    }
+//    public void updateTemperatureEntries() {
+//        Entry entry = new Entry(timeIndex++, bleClient.getTemperature(timeIndex)); // 2025.1.27 will cause race condition ?
+//        temperatureEntries.add(entry);
+//        // 通知數據集已更新
+//        lineData.notifyDataChanged();
+//        lineChart.notifyDataSetChanged();
+//        lineChart.invalidate(); // 刷新圖表
+//    }
 
 }

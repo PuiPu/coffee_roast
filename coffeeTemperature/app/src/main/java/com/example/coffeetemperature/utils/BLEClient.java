@@ -1,15 +1,39 @@
+/*
+ * [SERVER]
+ * 1. 確保手機支持 bluetooth peripheral
+ * 2. 設定 BLE 權限 (AndroidMainifest.xml)
+ * 3. 啟動 bluetooth service
+ * 4. 設定 Gatt service & characteristic
+ * 5. broadcast Gatt Service
+ * 6. handle Gatt Event'
+ * 7. stop broadcast and close Gatt service
+ *
+ * [CLIENT]
+ * 1. make sure BLE is enabled & device support BLE (AndroidManifest.xml)
+ * 2. 初始化 bluetooth object
+ * 3. search BLE device
+ * 4. connect to GATT service
+ * 5. listen to Gatt event
+ */
+
 package com.example.coffeetemperature.utils;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -18,90 +42,180 @@ import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.data.Entry;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 
 public class BLEClient {
-    private static final String DEVICE_NAME = "ESP32_Temperature"; // ESP32s 藍牙名稱
-    private static final UUID UUID_SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // SPP UUID
-    private static final String SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-    private static final String CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-    private BluetoothDevice BLEServer;
-    BluetoothManager bluetoothManager;
+    private static final String TAG = "BLEClient";
+    private static final String DEVICE_NAME = "ESP32_Temperature"; // ESP32 藍牙名稱
+    private static final UUID SERVICE_UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+    private static final UUID CHARACTERISTIC_UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+
+    private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
-    private BluetoothSocket bluetoothSocket;
-    private InputStream inputStream;
-    private Queue<Entry> temperatureEntriesBuffer; // 儲存溫度數據
+    private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothGatt bluetoothGatt;
     private Context context;
-    private int timeIndex; // count timer (use to update)
+    private Queue<Entry> temperatureEntriesBuffer;
+    private int timeIndex;
 
     public BLEClient(Context context) {
         this.context = context;
-        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = bluetoothManager.getAdapter(); // once find bluetoothAdpater, close bluetoothAdapter to save energy consumption
+        initBluetooth();
         temperatureEntriesBuffer = new LinkedList<>();
         timeIndex = 0;
-        BLEServer = null;
     }
 
-    // ----------------------------------------- test start
     @SuppressLint("MissingPermission")
-    public void connectToDevice(String deviceAddress) {
-        // 根據裝置 MAC 地址取得 BluetoothDevice
-        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+    private void initBluetooth() {
+        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter = bluetoothManager.getAdapter();
 
-        // 建立 GATT 連線 (會自動在背景執行緒執行)
-        bluetoothGatt = device.connectGatt(context, false, new BluetoothGattCallback() {
-            @Override
-            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                if (newState == BluetoothGatt.STATE_CONNECTED) {
-                    // 成功連線
-                    Log.d("BLEClient", "Connected to GATT server. Discovering services...");
-                    bluetoothGatt.discoverServices();
-                } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-                    // 連線中斷
-                    Log.d("BLEClient", "Disconnected from GATT server.");
-                }
+        if (bluetoothAdapter == null) {
+            Log.e(TAG, "Device does not support Bluetooth");
+            Toast.makeText(context, "Device does not support Bluetooth", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            context.startActivity(enableBtIntent);
+        }
+
+        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+    }
+
+    @SuppressLint("MissingPermission")
+    public void startScanning() {
+        if (!checkBluetoothPermissions()) {
+            return;
+        }
+
+        if (bluetoothLeScanner == null) {
+            Log.e(TAG, "BluetoothLeScanner is null");
+            Toast.makeText(context, "BluetoothLeScanner is unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        bluetoothLeScanner.startScan(scanCallback);
+        Log.d(TAG, "Started BLE scanning");
+    }
+
+    private final ScanCallback scanCallback = new ScanCallback() {
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            BluetoothDevice device = result.getDevice();
+            if (device.getName() != null && device.getName().equals(DEVICE_NAME)) {
+                Log.d(TAG, "Found target device: " + device.getName());
+                bluetoothLeScanner.stopScan(this);
+                connectToDevice(device);
             }
+        }
 
-            @Override
-            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    // 尋找到服務，讀取或寫入 CHARACTERISTIC
-                    BluetoothGattCharacteristic characteristic =
-                            gatt.getService(UUID.fromString(SERVICE_UUID))
-                                    .getCharacteristic(UUID.fromString(CHARACTERISTIC_UUID));
+        @Override
+        public void onScanFailed(int errorCode) {
+            Log.e(TAG, "BLE Scan failed with error code: " + errorCode);
+        }
+    };
 
-                    if (characteristic != null) {
-                        // 讀取 Characteristic
-                        gatt.readCharacteristic(characteristic);
-                    } else {
-                        Log.e("BLEClient", "Characteristic not found!");
+    @SuppressLint("MissingPermission")
+    private void connectToDevice(BluetoothDevice device) {
+        if (!checkBluetoothPermissions()) {
+            return;
+        }
+
+        bluetoothGatt = device.connectGatt(context, false, gattCallback);
+        Log.d(TAG, "Connecting to GATT server...");
+    }
+
+    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d(TAG, "Connected to GATT server.");
+                gatt.discoverServices();
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.d(TAG, "Disconnected from GATT server.");
+                /*
+                 * 跑到這裡來是不是代表 gatt server 失敗，如果是這樣，導致 gatt server 連線失敗的原因是什麼
+                 * 1. 藍牙設備不在附近 (超出距離)
+                 * 2. 藍牙設備被關閉
+                 * 3. 藍牙設備故障
+                 * 4. GATT 連線不穩定
+                 * 5. 程式邏輯錯誤 (例如：gatt 被提早關閉)
+                 * 6. Server 端斷開連線
+                 */
+
+                gatt.close();
+                bluetoothGatt = null;
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                BluetoothGattService service = gatt.getService(SERVICE_UUID);
+                if (service == null) {
+                    Log.e(TAG, "Service UUID not found!");
+                    return;
+                }
+
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(CHARACTERISTIC_UUID);
+                if (characteristic == null) {
+                    Log.e(TAG, "Characteristic UUID not found!");
+                    return;
+                }
+
+                if (!checkBluetoothPermissions()) {
+                    return;
+                }
+
+                Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
+                gatt.readCharacteristic(characteristic);
+                gatt.setCharacteristicNotification(characteristic, true);
+            } else {
+                Log.e(TAG, "Service discovery failed with status: " + status);
+            }
+        }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                byte[] data = characteristic.getValue();
+                if (data != null) {
+                    String temperatureStr = new String(data);
+                    try {
+                        float temperature = Float.parseFloat(temperatureStr);
+                        temperatureEntriesBuffer.add(new Entry(timeIndex++, temperature));
+                        Log.d(TAG, "Temperature read: " + temperature);
+                    } catch (NumberFormatException e) {
+                        Log.e(TAG, "Failed to parse temperature: " + temperatureStr, e);
                     }
                 }
+            } else {
+                Log.e(TAG, "Failed to read characteristic, status: " + status);
+            }
+        }
+    };
+
+    private boolean checkBluetoothPermissions() {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+
+            if (context instanceof Activity) {
+                ActivityCompat.requestPermissions((Activity) context,
+                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT},
+                        1);
             }
 
-            @Override
-            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    // 讀取成功
-                    String value = new String(characteristic.getValue());
-                    Log.d("BLEClient", "Characteristic value: " + value);
-                }
-            }
-
-            @Override
-            public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("BLEClient", "Characteristic written successfully");
-                }
-            }
-        });
+            Log.e(TAG, "Bluetooth permissions not granted");
+            return false;
+        }
+        return true;
     }
 
     @SuppressLint("MissingPermission")
@@ -109,111 +223,8 @@ public class BLEClient {
         if (bluetoothGatt != null) {
             bluetoothGatt.disconnect();
             bluetoothGatt.close();
+            bluetoothGatt = null;
+            Log.d(TAG, "Disconnected and closed GATT");
         }
     }
-    // ------------------------------------------------------ end
-
-    public void connectToBLEServer() {
-        try {
-            // Users can check permission by themselves
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                Toast.makeText(context, "權限不夠", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-
-            // match device
-            for (BluetoothDevice device : pairedDevices) {
-                if (DEVICE_NAME.equals(device.getName())) {
-                    BLEServer = device;
-                    break;
-                }
-            }
-            // can't find device
-            if (BLEServer == null) {
-                Toast.makeText(context, "ESP32 not found", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // test
-            Toast.makeText(context, "FIND ESP32", Toast.LENGTH_SHORT).show();
-
-            try {
-                // 建立藍牙 Socket 連線
-                UUID serviceUuid = UUID.fromString(SERVICE_UUID);
-                bluetoothSocket = BLEServer.createRfcommSocketToServiceRecord(serviceUuid);
-//                bluetoothSocket = BLEServer.createRfcommSocketToServiceRecord(SERVICE_UUID);
-                bluetoothSocket.connect();
-            } catch (IOException e) {
-                Log.d("BLEClient", "Socket connection failed: " + e.getMessage());
-                throw new IOException("Socket connection failed: " + e.getMessage());
-            }
-
-            Toast.makeText(context, "socket build success", Toast.LENGTH_SHORT).show();
-
-            inputStream = bluetoothSocket.getInputStream();
-            Toast.makeText(context, "Connected to ESP32", Toast.LENGTH_SHORT).show();
-
-            listenForData();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(context, "Connection failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void listenForData() {
-        new Thread(() -> {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            while (true) {
-                try {
-                    if (inputStream == null) break;
-                    bytes = inputStream.read(buffer);
-                    String data = new String(buffer, 0, bytes).trim();
-
-                    // 確保接收到的是有效的溫度數據
-                    if (data.startsWith("Temperature:")) {
-                        String temperatureString = data.split(":")[1].trim().replace("°C", "");
-                        float temperature = Float.parseFloat(temperatureString);
-
-                        updateTemperatureEntriesBuffer(temperature);
-                    }
-                } catch (IOException | NumberFormatException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }).start();
-    }
-
-    private void updateTemperatureEntriesBuffer(float temperature) {
-        // 新增一個溫度數據點
-        temperatureEntriesBuffer.add(new Entry(timeIndex++, temperature));
-    }
-
-    public float getTemperature(int timeIndex) {
-        float currentTemperature = 0;
-
-        try {
-            if (!temperatureEntriesBuffer.isEmpty()) {
-                assert temperatureEntriesBuffer.peek() != null; // make sure that temperatureEntriesBuffer is not null
-                currentTemperature = temperatureEntriesBuffer.peek().getY();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show();
-        }
-
-        return currentTemperature;
-    }
-
 }
