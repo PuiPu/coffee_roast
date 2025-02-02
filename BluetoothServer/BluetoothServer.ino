@@ -56,6 +56,7 @@ void setup() {
 
     // 設置 Notify 屬性 (重要)
     pCharacteristic->addDescriptor(new BLE2902());
+    pCharacteristic->setNotifyProperty(true); // ESP32 程式如果沒有正確啟用 notify，手機端就不會收到任何資料
 
     pCharacteristic->setValue("No Data"); // 初始值
     pService->start();
