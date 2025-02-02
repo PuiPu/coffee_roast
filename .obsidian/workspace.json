@@ -150,8 +150,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -164,7 +163,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "74ee7e509b80e455",
+  "active": "b6b90fe5513a2d1c",
   "lastOpenFiles": [
     "note.md",
     "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/views/ConfirmDialog.java",
