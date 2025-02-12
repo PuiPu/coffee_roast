@@ -6,20 +6,21 @@
 #include "max6675.h" // MAX6675 驅動庫
 
 // BLE UUID
-#define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
 // MAX6675 引腳設定
 int thermoDO = 27; // MISO (Data Out)
-int thermoCS = 14;  // CS (Chip Select)
+int thermoCS = 14; // CS (Chip Select)
 int thermoCLK = 12; // SCK (Clock)
 MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
 
 BLECharacteristic *pCharacteristic;
 BLEServer *pServer;
+BLEAdvertising *pAdvertising;
 
-// 記錄 BLE 是否已連線
 bool deviceConnected = false;
+bool oldDeviceConnected = false;
 
 // BLE 伺服器回調函數
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -31,7 +32,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
     void onDisconnect(BLEServer* pServer) override {
         Serial.println("BLE Client Disconnected!");
         deviceConnected = false;
-        pServer->getAdvertising()->start(); // 重新開始廣播
+        pAdvertising->start();  // BLE 斷開後自動廣播
     }
 };
 
@@ -51,17 +52,20 @@ void setup() {
 
     pCharacteristic = pService->createCharacteristic(
         CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+        BLECharacteristic::PROPERTY_NOTIFY  |
+        BLECharacteristic::PROPERTY_INDICATE |
+        BLECharacteristic::PROPERTY_READ | 
+        BLECharacteristic::PROPERTY_WRITE
     );
 
     // 設置 Notify 屬性 (重要)
     pCharacteristic->addDescriptor(new BLE2902());
-    pCharacteristic->setNotifyProperty(true); // ESP32 程式如果沒有正確啟用 notify，手機端就不會收到任何資料
 
-    pCharacteristic->setValue("No Data"); // 初始值
+    // 啟動服務
     pService->start();
 
-    BLEAdvertising *pAdvertising = pServer->getAdvertising();
+    // 設置 BLE 廣播
+    pAdvertising = pServer->getAdvertising();
     pAdvertising->addServiceUUID(SERVICE_UUID);
     pAdvertising->setScanResponse(true);
     pAdvertising->setMinPreferred(0x06);  // 設定低功耗模式
@@ -74,7 +78,7 @@ void setup() {
 void loop() {
     if (deviceConnected) {  // 只有當設備已連線時才更新數據
         // 讀取溫度
-        double temperature = thermocouple.readCelsius();
+        float temperature = thermocouple.readCelsius();
 
         // 打印到序列監視器
         Serial.print("Temperature: ");
@@ -88,5 +92,18 @@ void loop() {
         pCharacteristic->notify(); // 通知客戶端有新數據
     }
 
-    delay(2000); // 確保 BLE 廣播穩定
+    // 監控連線狀態
+    if (!deviceConnected && oldDeviceConnected) {
+        delay(500);  // 等待設備完全斷開
+        pServer->startAdvertising(); // 重新開始廣播
+        Serial.println("Start advertising...");
+        oldDeviceConnected = deviceConnected;
+    }
+
+    if (deviceConnected && !oldDeviceConnected) {
+        Serial.println("Device connected!");
+        oldDeviceConnected = deviceConnected;
+    }
+
+    delay(1000); // 每秒更新一次數據
 }

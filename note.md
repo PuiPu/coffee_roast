@@ -47,3 +47,14 @@ public class confirmDialog {
     }  
 }
 ```
+# nRF 跟我做的 android 不會自動更新 data 是因為
+```c++
+    pCharacteristic = pService->createCharacteristic(
+        CHARACTERISTIC_UUID,
+        BLECharacteristic::PROPERTY_NOTIFY  |
+        BLECharacteristic::PROPERTY_INDICATE |
+        BLECharacteristic::PROPERTY_READ |
+        BLECharacteristic::PROPERTY_WRITE
+    );
+```
+沒有加上 **BLECharacteristic::PROPERTY_INDICATE** 

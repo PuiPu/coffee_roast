@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -44,11 +45,11 @@ import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.data.Entry;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.UUID;
 
-public class BLEClient {
+import io.reactivex.rxjava3.core.Completable;
+
+public class  BLEClient {
     private static final String TAG = "BLEClient";
     private static final String DEVICE_NAME = "ESP32_Temperature"; // ESP32 藍牙名稱
     private static final UUID SERVICE_UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
@@ -59,15 +60,17 @@ public class BLEClient {
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothGatt bluetoothGatt;
     private Context context;
-    private Queue<Entry> temperatureEntriesBuffer;
     private int timeIndex;
     private Handler bleHandler;
     private HandlerThread handlerThread;
+    private TemperatureData temperatureData;
 
-    public BLEClient(Context context) {
+
+    public BLEClient(Context context, TemperatureData temperatureData) {
         this.context = context;
+        this.temperatureData = temperatureData;
         initBluetooth();
-        temperatureEntriesBuffer = new LinkedList<>();
+
         timeIndex = 0;
 
         // 初始化 BLE 背景執行緒
@@ -79,6 +82,21 @@ public class BLEClient {
     @SuppressLint("MissingPermission")
     private void initBluetooth() {
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+//
+//        // 檢查 Location 是否開啟
+//        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+//        boolean isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+//                                    locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+//        if (!isLocationEnabled) {
+//            new AlertDialog.Builder(context)
+//                    .setTitle("Location Service Required")
+//                    .setMessage("Please enable location service for Bluetooth scanning.")
+//                    .setPositiveButton("OK", (dialog, which) -> context.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)))
+//                    .setNegativeButton("Cancel", null)
+//                    .show();
+//            return;
+//        }
+
         bluetoothAdapter = bluetoothManager.getAdapter();
 
         if (bluetoothAdapter == null) {
@@ -107,6 +125,13 @@ public class BLEClient {
 
         bluetoothLeScanner.startScan(scanCallback);
         Log.d(TAG, "Started BLE scanning");
+    }
+    @SuppressLint("MissingPermission")
+    public void stopScanning() {
+        if (bluetoothLeScanner != null) {
+            bluetoothLeScanner.stopScan(scanCallback);
+            Log.d(TAG, "Stopped BLE scanning");
+        }
     }
 
     private final ScanCallback scanCallback = new ScanCallback() {
@@ -173,45 +198,22 @@ public class BLEClient {
                     return;
                 }
 
-                Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
+                // Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
                 gatt.setCharacteristicNotification(characteristic, true);
+
+                // ✅ 2️⃣ 寫入 CCCD (Client Characteristic Configuration Descriptor)
+                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")); // <BLE29002.h>
+                if (descriptor != null) {
+                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); // 讓 ESP32 知道 client 需要接收 notify
+                    gatt.writeDescriptor(descriptor);
+                    Log.d(TAG, "CCCD Descriptor written: ENABLE_NOTIFICATION");
+                } else {
+                    Log.e(TAG, "CCCD Descriptor not found!");
+                }
             } else {
                 Log.e(TAG, "Service discovery failed with status: " + status);
             }
         }
-//        @SuppressLint("MissingPermission")
-//        @Override
-//        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-//            if (status == BluetoothGatt.GATT_SUCCESS) {
-//                BluetoothGattService service = gatt.getService(SERVICE_UUID);
-//                if (service == null) {
-//                    Log.e(TAG, "Service UUID not found!");
-//                    return;
-//                }
-//
-//                BluetoothGattCharacteristic characteristic = service.getCharacteristic(CHARACTERISTIC_UUID);
-//                if (characteristic == null) {
-//                    Log.e(TAG, "Characteristic UUID not found!");
-//                    return;
-//                }
-//
-//                Log.d(TAG, "Found target characteristic: " + characteristic.getUuid());
-//
-//                // 設定通知
-//                gatt.setCharacteristicNotification(characteristic, true);
-//
-//                // 🔥 **寫入 CCCD 來啟用通知**
-//                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
-//                if (descriptor != null) {
-//                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-//                    gatt.writeDescriptor(descriptor);
-//                } else {
-//                    Log.e(TAG, "CCCD Descriptor not found!");
-//                }
-//            } else {
-//                Log.e(TAG, "Service discovery failed with status: " + status);
-//            }
-//        }
 
         @SuppressLint("MissingPermission")
         @Override
@@ -221,14 +223,24 @@ public class BLEClient {
                 String temperatureStr = new String(data);
                 try {
                     float temperature = Float.parseFloat(temperatureStr);
-                    temperatureEntriesBuffer.add(new Entry(timeIndex++, temperature));
+                    temperatureData.addTemperature(new Entry(timeIndex++, temperature));
                     Log.d(TAG, "Temperature updated: " + temperature);
                 } catch (NumberFormatException e) {
                     Log.e(TAG, "Failed to parse temperature: " + temperatureStr, e);
                 }
             }
-            Toast.makeText(context, "client 抓不到直", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(context, "client 抓不到直", Toast.LENGTH_SHORT).show();
         }
+
+//        @Override
+//        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                byte[] data = characteristic.getValue();
+//                float temperature = bytesToFloat(data);
+//                temperatureData.addTemperature(temperature);
+//                temperatureLiveData.postValue(temperatureData.getTemperatureList());
+//            }
+//        }
     };
 
     private boolean checkBluetoothPermissions() {
@@ -256,4 +268,24 @@ public class BLEClient {
             Log.d(TAG, "Disconnected and closed GATT");
         }
     }
+
+    /* data communication interface */
+    public Completable getTemperatureObservable() {
+        return Completable.create(emitter -> {
+            bleHandler.post(() -> {
+                if (bluetoothGatt == null) {
+                    emitter.onError(new IllegalStateException("GATT is null")); // 如果 GATT 是 null，發出錯誤訊號
+                }
+                else {
+                   // 確保可以觸發 onComplete(), 否則此 completable 會卡住
+                    emitter.onComplete();
+                }
+//                // 如果需要定期觸發，可以使用 timer()
+//                Disposable disposable = Single.timer(5, TimeUnit.SECONDS)
+//                        .subscribe(() -> emitter.onComplete(), emitter::onError);
+//                emitter.setCancellable(disposable::dispose);
+            });
+        });
+    }
 }
+

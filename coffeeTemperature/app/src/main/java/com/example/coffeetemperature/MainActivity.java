@@ -6,49 +6,55 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.LifecycleOwner;
 
+import com.example.coffeetemperature.model.TemperatureViewModel;
+import com.example.coffeetemperature.model.TemperatureViewModelFactory;
 import com.example.coffeetemperature.utils.BLEClient;
+import com.example.coffeetemperature.utils.TemperatureData;
 import com.example.coffeetemperature.views.ConfirmDialog;
 import com.example.coffeetemperature.views.TemperatureLineChart;
 import com.example.coffeetemperature.views.Timer;
 
 public class MainActivity extends AppCompatActivity {
-
+    private TemperatureData temperatureData = new TemperatureData();
     private TemperatureLineChart tempLineChart;
+    private TemperatureViewModel temperatureViewModel;
+    private LifecycleOwner lifecycleOwner;
     private Button startButton, recordButton, stopButton;
     private Timer timer;
     // test
-    BLEClient bleClient;
+    private BLEClient bleClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 初始化 LineChart
+//        // initialize BLEClient (如果還沒啟動必須先跳出提醒)
+//        initBLEClient();
+        // initialize LineChart
         initLineChart();
-        // 初始化 button
+        // initialize button
         initButton();
-        // 初始化 timer
+        // initialize timer
         initTimer();
-
+        // initialize BLE button (TimeStamp: 2025.2.6 要在額外做一個 scan BLEserver 再進入 mainActivity 的 activity 嗎 ?)
+        initBLEButton();
+    }
+    private void initBLEButton() {
         // BLE button
-        bleClient = new BLEClient(this);
+        TemperatureData temperatureEntries = new TemperatureData();
+        bleClient = new BLEClient(this, temperatureEntries);
         findViewById(R.id.BLE_button).setOnClickListener(v -> bleClient.startScanning());
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        try {
-//            if (inputStream != null) inputStream.close();
-//            if (bluetoothSocket != null) bluetoothSocket.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
     private void initLineChart() {
-        tempLineChart = new TemperatureLineChart(this, findViewById(R.id.lineChart));
+        tempLineChart = new TemperatureLineChart(this, temperatureData, findViewById(R.id.lineChart), lifecycleOwner);
+        // Initialize ViewModel
+        TemperatureViewModelFactory factory = new TemperatureViewModelFactory(temperatureData);
+        /* timestamp:2025.2.10 現在卡在這裡沒解決，註解掉這行可以正常跑程式(但是功能沒有實現) */
+        // temperatureViewModel = new ViewModelProvider(this, factory).get(TemperatureViewModel.class); // error here
     }
 
     private void initButton() {
@@ -75,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
         startButton.setAlpha(0.5F);
         // 開始計時
         timer.start();
+        // 開始畫圖
+        /* CODE here */
     }
 
     private void handleRecord() {
