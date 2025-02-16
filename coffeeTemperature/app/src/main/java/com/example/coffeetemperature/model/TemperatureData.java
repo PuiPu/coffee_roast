@@ -1,4 +1,4 @@
-package com.example.coffeetemperature.utils;
+package com.example.coffeetemperature.model;
 
 import com.github.mikephil.charting.data.Entry;
 

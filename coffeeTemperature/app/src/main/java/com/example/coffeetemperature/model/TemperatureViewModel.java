@@ -14,8 +14,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.coffeetemperature.utils.TemperatureData;
-
 import java.util.List;
 
 public class TemperatureViewModel extends ViewModel {

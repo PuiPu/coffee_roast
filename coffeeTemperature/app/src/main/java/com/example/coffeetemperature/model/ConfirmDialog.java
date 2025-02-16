@@ -1,4 +1,4 @@
-package com.example.coffeetemperature.views;
+package com.example.coffeetemperature.model;
 
 import android.app.AlertDialog;
 import android.content.Context;

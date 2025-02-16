@@ -7,7 +7,7 @@
  *    - LineChart
  */
 
-package com.example.coffeetemperature.views;
+package com.example.coffeetemperature.model;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -16,8 +16,6 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
-import com.example.coffeetemperature.utils.BLEClient;
-import com.example.coffeetemperature.utils.TemperatureData;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
@@ -44,7 +42,7 @@ public class TemperatureLineChart {
 //    public LiveData<List<Entry>> getEntriesLiveData() {
 //        return entriesLiveData;
 //    }
-    private BLEClient bleClient;
+    private BLEClientModel bleClientModel;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private LifecycleOwner lifecycleOwner; // lifecycleOwner is to connect data to the UI
 
@@ -53,7 +51,7 @@ public class TemperatureLineChart {
         this.lineChart = lineChart;
         this.lifecycleOwner = lifecycleOwner;
         this.temperatureData = temperatureData;
-        bleClient = new BLEClient(context, temperatureData);
+        bleClientModel = new BLEClientModel(context, temperatureData);
         setupEmptyLineChart();
         observeTemperatureChanges();
     }
@@ -64,7 +62,7 @@ public class TemperatureLineChart {
             return;
         }
         // 使用 RxJava 監聽 BLEClient 的資料更新
-        Disposable disposable = bleClient.getTemperatureObservable()
+        Disposable disposable = bleClientModel.getTemperatureObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -139,10 +137,10 @@ public class TemperatureLineChart {
     public void updateDescription(Description D) { this.description = D; }
 
     public void startDataCollection() {
-        bleClient.startScanning();
+        bleClientModel.startScanning();
     }
 
     public void stopDataCollection() {
-        bleClient.stopScanning();
+        bleClientModel.stopScanning();
     }
 }

@@ -1,13 +1,9 @@
-package com.example.coffeetemperature;
+package com.example.coffeetemperature.views;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
-import android.os.storage.StorageManager;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -16,6 +12,8 @@ import android.widget.Toast;
 import android.os.Handler;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.coffeetemperature.R;
 
 import java.util.ArrayList;
 

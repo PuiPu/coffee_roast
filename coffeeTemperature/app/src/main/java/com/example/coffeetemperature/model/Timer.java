@@ -1,4 +1,4 @@
-package com.example.coffeetemperature.views;
+package com.example.coffeetemperature.model;
 
 import android.os.Handler;
 import android.widget.TextView;

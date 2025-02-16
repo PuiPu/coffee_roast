@@ -16,9 +16,8 @@
  * 5. listen to Gatt event
  */
 
-package com.example.coffeetemperature.utils;
+package com.example.coffeetemperature.model;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -42,18 +41,18 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
-
-import com.github.mikephil.charting.data.Entry;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.UUID;
 
 import io.reactivex.rxjava3.core.Completable;
 
-public class  BLEClient {
+public class BLEClientModel {
     private static final String TAG = "BLEClient";
     private static final String DEVICE_NAME = "ESP32_Temperature"; // ESP32 藍牙名稱
     private static final UUID SERVICE_UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
-    private static final UUID CHARACTERISTIC_UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+    private static final UUID CHARACTERISTIC_UUID = UU6ID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
@@ -65,11 +64,16 @@ public class  BLEClient {
     private HandlerThread handlerThread;
     private TemperatureData temperatureData;
 
+    /* TODO: TEST MVMM */
+    private MutableLiveData<String> liveData;
+    public LiveData<String> getBLELiveData() { return liveData; }
+    /* test END */
 
-    public BLEClient(Context context, TemperatureData temperatureData) {
+    public BLEClientModel(Context context, TemperatureData temperatureData) {
         this.context = context;
         this.temperatureData = temperatureData;
-        initBluetooth();
+        /* TimeStamp:2025.2.16 先把 initBluetooth 變成 public */
+        // initBluetooth();
 
         timeIndex = 0;
 
@@ -80,7 +84,7 @@ public class  BLEClient {
     }
 
     @SuppressLint("MissingPermission")
-    private void initBluetooth() {
+    public void initBluetooth() {
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 //
 //        // 檢查 Location 是否開啟
@@ -155,7 +159,7 @@ public class  BLEClient {
     };
 
     @SuppressLint("MissingPermission")
-    private void connectToDevice(BluetoothDevice device) {
+    public void connectToDevice(BluetoothDevice device) {
         if (!checkBluetoothPermissions()) return;
 
         Log.d(TAG, "Connecting to GATT server...");

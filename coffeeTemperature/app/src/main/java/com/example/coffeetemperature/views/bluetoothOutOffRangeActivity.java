@@ -1,4 +1,4 @@
-package com.example.coffeetemperature;
+package com.example.coffeetemperature.views;
 
 import androidx.appcompat.app.AppCompatActivity;
 
