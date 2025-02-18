@@ -18,6 +18,7 @@
 
 package com.example.coffeetemperature.model;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -44,15 +45,15 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import java.util.UUID;
+import com.github.mikephil.charting.data.Entry;
 
-import io.reactivex.rxjava3.core.Completable;
+import java.util.UUID;
 
 public class BLEClientModel {
     private static final String TAG = "BLEClient";
     private static final String DEVICE_NAME = "ESP32_Temperature"; // ESP32 藍牙名稱
     private static final UUID SERVICE_UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
-    private static final UUID CHARACTERISTIC_UUID = UU6ID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+    private static final UUID CHARACTERISTIC_UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
@@ -62,16 +63,16 @@ public class BLEClientModel {
     private int timeIndex;
     private Handler bleHandler;
     private HandlerThread handlerThread;
-    private TemperatureData temperatureData;
+//    private TemperatureData temperatureData;
 
     /* TODO: TEST MVMM */
-    private MutableLiveData<String> liveData;
-    public LiveData<String> getBLELiveData() { return liveData; }
+    private MutableLiveData<Entry> temperatureliveData = new MutableLiveData<>();
+    public LiveData<Entry> getBLELiveData() { return temperatureliveData; }
     /* test END */
 
-    public BLEClientModel(Context context, TemperatureData temperatureData) {
+    public BLEClientModel(Context context) {
         this.context = context;
-        this.temperatureData = temperatureData;
+        // this.temperatureData = temperatureData;
         /* TimeStamp:2025.2.16 先把 initBluetooth 變成 public */
         // initBluetooth();
 
@@ -159,7 +160,7 @@ public class BLEClientModel {
     };
 
     @SuppressLint("MissingPermission")
-    public void connectToDevice(BluetoothDevice device) {
+    private void connectToDevice(BluetoothDevice device) {
         if (!checkBluetoothPermissions()) return;
 
         Log.d(TAG, "Connecting to GATT server...");
@@ -227,7 +228,9 @@ public class BLEClientModel {
                 String temperatureStr = new String(data);
                 try {
                     float temperature = Float.parseFloat(temperatureStr);
-                    temperatureData.addTemperature(new Entry(timeIndex++, temperature));
+                    // TODO: update temperature
+                    temperatureliveData.setValue(new Entry(timeIndex++, temperature));
+                    // temperatureLiveData.add(new Entry(timeIndex++, temperature));
                     Log.d(TAG, "Temperature updated: " + temperature);
                 } catch (NumberFormatException e) {
                     Log.e(TAG, "Failed to parse temperature: " + temperatureStr, e);
@@ -248,15 +251,20 @@ public class BLEClientModel {
     };
 
     private boolean checkBluetoothPermissions() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-
-            if (context instanceof Activity) {
-                ActivityCompat.requestPermissions((Activity) context,
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT},
-                        1);
+        if (context instanceof Activity) {
+            Activity activity = (Activity) context;
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                // 如果沒有權限，請求權限
+                ActivityCompat.requestPermissions(activity, new String[]{
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                }, 1);
+            } else {
+                return true; // 已取得權限
             }
-
+        }
+        else{
             Log.e(TAG, "Bluetooth permissions not granted");
             return false;
         }
@@ -271,25 +279,6 @@ public class BLEClientModel {
             bluetoothGatt = null;
             Log.d(TAG, "Disconnected and closed GATT");
         }
-    }
-
-    /* data communication interface */
-    public Completable getTemperatureObservable() {
-        return Completable.create(emitter -> {
-            bleHandler.post(() -> {
-                if (bluetoothGatt == null) {
-                    emitter.onError(new IllegalStateException("GATT is null")); // 如果 GATT 是 null，發出錯誤訊號
-                }
-                else {
-                   // 確保可以觸發 onComplete(), 否則此 completable 會卡住
-                    emitter.onComplete();
-                }
-//                // 如果需要定期觸發，可以使用 timer()
-//                Disposable disposable = Single.timer(5, TimeUnit.SECONDS)
-//                        .subscribe(() -> emitter.onComplete(), emitter::onError);
-//                emitter.setCancellable(disposable::dispose);
-            });
-        });
     }
 }
 

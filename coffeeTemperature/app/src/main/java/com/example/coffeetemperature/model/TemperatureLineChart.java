@@ -14,7 +14,6 @@ import android.graphics.Color;
 
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -25,11 +24,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.List;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.functions.Action;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class TemperatureLineChart {
     private com.github.mikephil.charting.charts.LineChart lineChart;
@@ -47,41 +42,12 @@ public class TemperatureLineChart {
     private LifecycleOwner lifecycleOwner; // lifecycleOwner is to connect data to the UI
 
 
-    public TemperatureLineChart(Context context, TemperatureData temperatureData, LineChart lineChart, LifecycleOwner lifecycleOwner) {
+    public TemperatureLineChart(Context context, TemperatureData temperatureData, LineChart lineChart) {
         this.lineChart = lineChart;
-        this.lifecycleOwner = lifecycleOwner;
+        // this.lifecycleOwner = lifecycleOwner;
         this.temperatureData = temperatureData;
-        bleClientModel = new BLEClientModel(context, temperatureData);
+        bleClientModel = new BLEClientModel(context);
         setupEmptyLineChart();
-        observeTemperatureChanges();
-    }
-
-    private void observeTemperatureChanges() { // timeStamp:2025.2.10 這裡有 error
-        if (lifecycleOwner == null) { // 這樣處理就會過了嗎 ???
-            // Handle the case where lifecycleOwner is null, e.g., log an error or return
-            return;
-        }
-        // 使用 RxJava 監聽 BLEClient 的資料更新
-        Disposable disposable = bleClientModel.getTemperatureObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    new Action() { // Timestamp:2025.2.10 這裡變成 anonymous function 就過了(lamda 語法不會過)，為什麼 ?
-                        @Override
-                        public void run() throws Throwable {
-                            entriesLiveData.setValue(temperatureData.getTemperatureList()); // setValue =>(mainThread, frontend), postValue =>(childThread, backend)
-                        }
-                    },
-                    Throwable::printStackTrace
-                ); 
-        compositeDisposable.add(disposable);
-
-        entriesLiveData.observe(lifecycleOwner, new Observer<List<Entry>>() { // timeStamp:2025.2.10 這裡有 error(java.lang.NullPointerException: Attempt to invoke interface method 'androidx.lifecycle.Lifecycle androidx.lifecycle.LifecycleOwner.getLifecycle()' on a null object reference)
-            @Override
-            public void onChanged(List<Entry> entries) {
-                updateChartData(entries);
-            }
-        });
     }
 
     private void setupEmptyLineChart() {

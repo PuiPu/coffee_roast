@@ -1,3 +1,27 @@
+# MVVM arch.
+## model
+### BLE model
+- interface
+- function
+	- (dis)connect to BLE server
+		- bluetooth scanner
+		- GATT server
+			- on change
+			- 
+	- update temperature data (livedata)
+### line chart model
+- interface
+- function
+	- draw point & line in chart
+	- update line chart with new data 
+## view
+- main activity
+- out off range activity
+- save file activity
+- browse history activity
+
+## view model
+( --- same as model --- )
 # module
 ```mathematica
 ActivityMain/

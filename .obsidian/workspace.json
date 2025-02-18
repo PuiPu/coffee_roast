@@ -11,10 +11,14 @@
             "id": "9586558313283765",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "README"
             }
           }
         ]
@@ -74,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "de13668ebeacad5e",
@@ -155,24 +160,27 @@
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
-      "command-palette:Open command palette": false
+      "command-palette:Open command palette": false,
+      "obsidian-git:Open Git source control": false,
+      "obsidian-excalidraw-plugin:New drawing": false
     }
   },
   "active": "9586558313283765",
   "lastOpenFiles": [
-    "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/utils/BLEClient.java~",
-    "coffeeTemperature/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/example/coffeetemperature/utils/BLEClient$2.dex",
-    "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/views/TemperatureLineChart.java~",
-    "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/utils/TemperatureData.java",
-    "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/utils/TemperatureList.java",
-    "coffeeTemperature/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/example/coffeetemperature/utils/BLEClient$1.dex",
-    "coffeeTemperature/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/example/coffeetemperature/views/TemperatureLineChart$1.class",
+    "coffeeTemperature/app/src/main/java/com/example/coffeetemperature/database",
+    "coffeeTemperature/app/src/main/java/database",
+    "Excalidraw/Drawing 2025-02-18 22.09.06.excalidraw.md",
+    "Excalidraw",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/TemperatureLineChart$2.class.uniqueId4",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/BLEClient$1.class.uniqueId8",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/TemperatureLineChart.class.uniqueId5",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/Timer.class.uniqueId10",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/saveFileActivity$1.class.uniqueId9",
+    "coffeeTemperature/app/build/tmp/compileDebugJavaWithJavac/compileTransaction/stash-dir/ConfirmDialog.class.uniqueId11",
+    "coffeeTemperature/app/build/intermediates/dex/debug/mergeProjectDexDebug/7/classes.dex",
+    "coffeeTemperature/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/example/coffeetemperature/views/saveFileActivity.dex",
     "note.md",
     "README.md",
-    "coffeeTemperature/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/example/coffeetemperature/saveFileActivity$1.class",
-    "coffeeTemperature/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/example/coffeetemperature/utils/BLEClient.class",
-    "coffeeTemperature/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/example/coffeetemperature/utils/BLEClient$1.class",
-    "coffeeTemperature/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/example/coffeetemperature/views/TemperatureLineChart.class",
     "conflict-files-obsidian-git.md",
     "coffeeTemperature/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp",
     "coffeeTemperature/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",

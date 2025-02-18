@@ -1,38 +1,34 @@
 package com.example.coffeetemperature.views;
 
+import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LifecycleOwner;
 
 import com.example.coffeetemperature.R;
-import com.example.coffeetemperature.viewModel.TemperatureViewModel;
-import com.example.coffeetemperature.model.BLEClientModel;
-import com.example.coffeetemperature.model.TemperatureData;
 import com.example.coffeetemperature.model.ConfirmDialog;
+import com.example.coffeetemperature.model.TemperatureData;
 import com.example.coffeetemperature.model.TemperatureLineChart;
 import com.example.coffeetemperature.model.Timer;
+import com.example.coffeetemperature.viewModel.BLEClientViewModel;
+import com.example.coffeetemperature.viewModel.TemperatureViewModel;
 
 public class MainActivity extends AppCompatActivity {
     private TemperatureData temperatureData = new TemperatureData();
     private TemperatureLineChart tempLineChart;
-    private com.example.coffeetemperature.model.TemperatureViewModel temperatureViewModel;
-    private LifecycleOwner lifecycleOwner;
     private Button startButton, recordButton, stopButton;
     private Timer timer;
     // test
-    private BLEClientModel bleClientModel;
+    private BLEClientViewModel bleClientViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        // initialize BLEClient (如果還沒啟動必須先跳出提醒)
-//        initBLEClient();
         // initialize LineChart
         initLineChart();
         // initialize button
@@ -44,13 +40,12 @@ public class MainActivity extends AppCompatActivity {
     }
     private void initBLEButton() {
         // BLE button
-        TemperatureData temperatureEntries = new TemperatureData();
-        bleClientModel = new BLEClientModel(this, temperatureEntries);
-        findViewById(R.id.BLE_button).setOnClickListener(v -> bleClientModel.startScanning());
+        bleClientViewModel = new BLEClientViewModel(new Application()); // timeStamp:2025.2.17 這裡的 application 藥用甚麼 ?
+        findViewById(R.id.BLE_button).setOnClickListener(v -> bleClientViewModel.startScanning());
     }
 
     private void initLineChart() {
-        tempLineChart = new TemperatureLineChart(this, temperatureData, findViewById(R.id.lineChart), lifecycleOwner);
+        tempLineChart = new TemperatureLineChart(this, temperatureData, findViewById(R.id.lineChart));
         // Initialize ViewModel
         TemperatureViewModel factory = new TemperatureViewModel(temperatureData);
         /* timestamp:2025.2.10 現在卡在這裡沒解決，註解掉這行可以正常跑程式(但是功能沒有實現) */
